@@ -1,0 +1,238 @@
+@import "tailwindcss";
+
+@layer base {
+  html {
+    overflow-x: hidden !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    overscroll-behavior-x: none !important;
+    touch-action: pan-y;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    overflow-x: hidden !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    overscroll-behavior-x: none !important;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    touch-action: pan-y;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #root {
+    overflow-x: hidden !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
+/* Custom scrollbar for dark monitor theme */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(10, 15, 13, 0.8);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(16, 185, 129, 0.25);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(16, 185, 129, 0.5);
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(16, 185, 129, 0.45);
+  }
+}
+
+.pulse-glow {
+  animation: pulseGlow 2.5s infinite;
+}
+
+/* ==========================================================================
+   MODO DE ALTO CONTRASTE (USO EXTERNO / LUZ SOLAR DIRETA E NOITE)
+   Projetado para operadores e administradores em campo, eliminando reflexos
+   e garantindo legibilidade máxima (WCAG AAA) sob forte luz solar.
+   ========================================================================== */
+
+.high-contrast {
+  color-scheme: light;
+}
+
+.high-contrast.theme-root,
+.high-contrast .theme-container {
+  background-color: #f8fafc !important;
+  color: #020617 !important;
+}
+
+/* Background overrides in High Contrast Mode */
+.high-contrast .bg-neutral-950,
+.high-contrast .bg-neutral-950\/95,
+.high-contrast .bg-neutral-950\/90,
+.high-contrast .bg-neutral-950\/85,
+.high-contrast .bg-neutral-950\/80,
+.high-contrast .bg-neutral-950\/40,
+.high-contrast .bg-black,
+.high-contrast .bg-black\/95,
+.high-contrast .bg-black\/85,
+.high-contrast .bg-black\/80 {
+  background-color: #ffffff !important;
+}
+
+.high-contrast .bg-neutral-900,
+.high-contrast .bg-neutral-900\/95,
+.high-contrast .bg-neutral-900\/90,
+.high-contrast .bg-neutral-900\/80,
+.high-contrast .bg-neutral-900\/70,
+.high-contrast .bg-neutral-800,
+.high-contrast .bg-neutral-800\/80,
+.high-contrast .bg-neutral-800\/70 {
+  background-color: #f1f5f9 !important;
+}
+
+/* Border overrides with sharp dark lines */
+.high-contrast .border-neutral-900,
+.high-contrast .border-neutral-900\/80,
+.high-contrast .border-neutral-800,
+.high-contrast .border-neutral-800\/90,
+.high-contrast .border-neutral-800\/80,
+.high-contrast .border-neutral-800\/60,
+.high-contrast .border-neutral-700,
+.high-contrast .border-neutral-700\/80,
+.high-contrast .border-emerald-950\/80,
+.high-contrast .border-emerald-950\/60,
+.high-contrast .border-emerald-900\/40 {
+  border-color: #0f172a !important;
+}
+
+/* Text overrides for maximum outdoor daylight contrast */
+.high-contrast .text-white,
+.high-contrast .text-neutral-100,
+.high-contrast .text-neutral-200,
+.high-contrast .text-neutral-300 {
+  color: #020617 !important;
+  font-weight: 600;
+}
+
+.high-contrast .text-neutral-400,
+.high-contrast .text-neutral-500 {
+  color: #1e293b !important;
+  font-weight: 500;
+}
+
+/* Form inputs & textareas in high contrast */
+.high-contrast input[type="text"],
+.high-contrast input[type="number"],
+.high-contrast textarea,
+.high-contrast select {
+  background-color: #ffffff !important;
+  color: #020617 !important;
+  border-color: #0f172a !important;
+  border-width: 1.5px !important;
+  font-weight: 600 !important;
+}
+
+.high-contrast input::placeholder,
+.high-contrast textarea::placeholder {
+  color: #475569 !important;
+  font-weight: 500 !important;
+}
+
+/* Buttons in High Contrast Mode */
+.high-contrast button {
+  border-color: #0f172a;
+}
+
+.high-contrast .bg-emerald-500 {
+  background-color: #047857 !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+}
+
+.high-contrast .text-emerald-400,
+.high-contrast .text-emerald-300 {
+  color: #065f46 !important;
+  font-weight: 700;
+}
+
+.high-contrast .bg-emerald-950\/60,
+.high-contrast .bg-emerald-950\/40,
+.high-contrast .bg-emerald-950\/80,
+.high-contrast .bg-emerald-500\/20,
+.high-contrast .bg-emerald-500\/10 {
+  background-color: #d1fae5 !important;
+  color: #065f46 !important;
+  border-color: #047857 !important;
+}
+
+.high-contrast .bg-rose-500\/20,
+.high-contrast .bg-rose-500\/10 {
+  background-color: #fee2e2 !important;
+  color: #991b1b !important;
+  border-color: #b91c1c !important;
+}
+
+.high-contrast .text-rose-400,
+.high-contrast .text-rose-500 {
+  color: #991b1b !important;
+  font-weight: 700;
+}
+
+.high-contrast .bg-amber-500\/20,
+.high-contrast .bg-amber-500\/10 {
+  background-color: #fef3c7 !important;
+  color: #92400e !important;
+  border-color: #d97706 !important;
+}
+
+.high-contrast .text-amber-400,
+.high-contrast .text-amber-300 {
+  color: #92400e !important;
+  font-weight: 700;
+}
+
+.high-contrast .bg-cyan-500\/20,
+.high-contrast .bg-cyan-500\/10 {
+  background-color: #cffafe !important;
+  color: #155e75 !important;
+  border-color: #0891b2 !important;
+}
+
+.high-contrast .text-cyan-400,
+.high-contrast .text-cyan-300 {
+  color: #155e75 !important;
+  font-weight: 700;
+}
+
+/* Card outlines and shadows */
+.high-contrast .rounded-2xl,
+.high-contrast .rounded-3xl,
+.high-contrast .rounded-xl {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* High contrast custom scrollbar */
+.high-contrast ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+.high-contrast ::-webkit-scrollbar-thumb {
+  background: #0f172a;
+  border-radius: 4px;
+}
+
+

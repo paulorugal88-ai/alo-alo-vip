@@ -1,0 +1,6 @@
+{
+  "name": "Alô Alô VIP - Central de Monitoramento",
+  "description": "Central de Monitoramento 24h com rede VIP de 10.000 membros, bots indetectáveis para membros, gráficos de login por data e porcentagem de reportes mensais.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
