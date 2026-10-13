@@ -3,14 +3,14 @@ import { initializeApp } from "firebase/app"
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth"
 import { getFirestore, doc, setDoc } from "firebase/firestore"
 
-// SEU FIREBASE alo-alo-vip - mantive suas chaves
+// FIREBASE ALO-ALO-VIP - CORRIGIDO COM SUA CHAVE COMPLETA
 const firebaseConfig = {
-  apiKey: "AIzaSyC2X3sfm5AdgXWsVxNCa_",
+  apiKey: "AIzaSyC2X3sfm5AdgXWsVxNCa_PvQKpjDyO1iWA",
   authDomain: "alo-alo-vip.firebaseapp.com",
   projectId: "alo-alo-vip",
-  storageBucket: "alo-alo-vip.appspot.com",
-  messagingSenderId: "84780432447",
-  appId: "1:84780432447:web:a09aec19"
+  storageBucket: "alo-alo-vip.firebasestorage.app",
+  messagingSenderId: "847804328447",
+  appId: "1:847804328447:web:a09aec19415fe16478dfca"
 };
 
 const app = initializeApp(firebaseConfig)
@@ -35,7 +35,7 @@ export default function App(){
   function validarDDD(v:string){
     const n = parseInt(v)
     if(!v || v.length!==2 || !DDDS_VALIDOS.includes(n)){
-      setErroDDD('Insira DDD válido (ex: 11, 21, 31)')
+      setErroDDD('Insira DDD válido (ex: 11, 21, 47, 41)')
       return false
     }
     setErroDDD('')
@@ -54,12 +54,13 @@ export default function App(){
         vencimento: venc.toISOString(),
         criadoEm: new Date()
       })
-      alert('Cadastro feito com sucesso!')
+      alert('Cadastro feito com sucesso! Bem-vindo '+nome)
     }catch(e:any){ alert(e.message) }
     setLoading(false)
   }
 
   async function handleLogin(){
+    if(!email || !senha){ alert('Preencha e-mail e senha'); return }
     setLoading(true)
     try{
       await signInWithEmailAndPassword(auth, email, senha)
@@ -70,32 +71,33 @@ export default function App(){
 
   return (
     <div style={{maxWidth:420, margin:'0 auto', padding:20, background:'#fff', minHeight:'100vh', fontFamily:'sans-serif'}}>
+      <h2 style={{textAlign:'center', color:'#111', marginBottom:16}}>Alô Alô VIP</h2>
       <div style={{display:'flex', background:'#f3f4f6', borderRadius:12, padding:4, marginBottom:20}}>
-        <button onClick={()=>setAba('cadastro')} style={{flex:1, padding:10, borderRadius:8, border:'none', fontWeight:700, background: aba==='cadastro'?'#00C896':'transparent', color: aba==='cadastro'?'#fff':'#666'}}>Cadastro</button>
-        <button onClick={()=>setAba('login')} style={{flex:1, padding:10, borderRadius:8, border:'none', fontWeight:700, background: aba==='login'?'#00C896':'transparent', color: aba==='login'?'#fff':'#666'}}>Login</button>
+        <button onClick={()=>setAba('cadastro')} style={{flex:1, padding:10, borderRadius:8, border:'none', fontWeight:700, cursor:'pointer', background: aba==='cadastro'?'#00C896':'transparent', color: aba==='cadastro'?'#fff':'#666'}}>Cadastro</button>
+        <button onClick={()=>setAba('login')} style={{flex:1, padding:10, borderRadius:8, border:'none', fontWeight:700, cursor:'pointer', background: aba==='login'?'#00C896':'transparent', color: aba==='login'?'#fff':'#666'}}>Login</button>
       </div>
 
       {aba==='cadastro' && <>
-        <input value={nome} onChange={e=>setNome(e.target.value)} placeholder="Nome" style={{width:'100%', padding:14, borderRadius:12, border:'1px solid #e5e7eb', background:'#EEF4FF', marginBottom:12}}/>
+        <input value={nome} onChange={e=>setNome(e.target.value)} placeholder="Nome completo" style={{width:'100%', padding:14, borderRadius:12, border:'1px solid #e5e7eb', background:'#EEF4FF', marginBottom:12, boxSizing:'border-box'}}/>
         <div style={{display:'flex', gap:8, marginBottom:4}}>
           <select style={{padding:14, borderRadius:12, border:'1px solid #e5e7eb'}}><option>+55</option></select>
-          <input value={ddd} onChange={e=>{ const v=e.target.value.replace(/\D/g,'').slice(0,2); setDdd(v); if(v.length===2) validarDDD(v)}} placeholder="DDD" style={{padding:14, borderRadius:12, border: erroDDD?'1px solid red':'1px solid #e5e7eb', width:80}}/>
-          <input value={telefone} onChange={e=>setTelefone(e.target.value.replace(/\D/g,'').slice(0,9))} placeholder="99981-1502" style={{flex:1, padding:14, borderRadius:12, border:'1px solid #e5e7eb'}}/>
+          <input value={ddd} onChange={e=>{ const v=e.target.value.replace(/\D/g,'').slice(0,2); setDdd(v); if(v.length===2) validarDDD(v)}} placeholder="DDD" style={{padding:14, borderRadius:12, border: erroDDD?'1px solid #ef4444':'1px solid #e5e7eb', width:70, boxSizing:'border-box'}}/>
+          <input value={telefone} onChange={e=>setTelefone(e.target.value.replace(/\D/g,'').slice(0,9))} placeholder="99981-1502" style={{flex:1, padding:14, borderRadius:12, border:'1px solid #e5e7eb', boxSizing:'border-box'}}/>
         </div>
-        {erroDDD && <p style={{color:'#0DBE8B', fontSize:12, marginBottom:12}}>{erroDDD}</p>}
-        <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="E-mail" style={{width:'100%', padding:14, borderRadius:12, border:'1px solid #e5e7eb', background:'#EEF4FF', marginBottom:12}}/>
-        <input type="password" value={senha} onChange={e=>setSenha(e.target.value)} placeholder="Senha" style={{width:'100%', padding:14, borderRadius:12, border:'1px solid #e5e7eb', marginBottom:16}}/>
-        <button onClick={handleCadastro} disabled={loading} style={{width:'100%', padding:16, borderRadius:16, background:'#00C896', color:'#fff', border:'none', fontWeight:700}}>{loading?'Carregando...':'Entrar'}</button>
+        {erroDDD && <p style={{color:'#ef4444', fontSize:12, margin:'0 0 12px 0'}}>{erroDDD}</p>}
+        <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="E-mail" style={{width:'100%', padding:14, borderRadius:12, border:'1px solid #e5e7eb', background:'#EEF4FF', marginBottom:12, boxSizing:'border-box'}}/>
+        <input type="password" value={senha} onChange={e=>setSenha(e.target.value)} placeholder="Senha (min 6 caracteres)" style={{width:'100%', padding:14, borderRadius:12, border:'1px solid #e5e7eb', marginBottom:16, boxSizing:'border-box'}}/>
+        <button onClick={handleCadastro} disabled={loading} style={{width:'100%', padding:16, borderRadius:16, background:'#00C896', color:'#fff', border:'none', fontWeight:700, cursor:'pointer'}}>{loading?'Carregando...':'Cadastrar'}</button>
         <div style={{display:'flex', gap:12, marginTop:20}}>
-          <div style={{flex:1, padding:12, borderRadius:12, background:'#f9fafb', border:'1px solid #eee'}}><small>DATA DE ENTRADA</small><br/><b>{hoje.toLocaleDateString('pt-BR')}</b></div>
-          <div style={{flex:1, padding:12, borderRadius:12, background:'#ECFDF5', border:'1px solid #A7F3D0'}}><small>VENCIMENTO • 30 DIAS</small><br/><b style={{color:'#065F46'}}>{venc.toLocaleDateString('pt-BR')}</b></div>
+          <div style={{flex:1, padding:12, borderRadius:12, background:'#f9fafb', border:'1px solid #eee'}}><small style={{color:'#666'}}>DATA DE ENTRADA</small><br/><b>{hoje.toLocaleDateString('pt-BR')}</b></div>
+          <div style={{flex:1, padding:12, borderRadius:12, background:'#ECFDF5', border:'1px solid #A7F3D0'}}><small style={{color:'#065F46'}}>VENCIMENTO • 30 DIAS</small><br/><b style={{color:'#065F46'}}>{venc.toLocaleDateString('pt-BR')}</b></div>
         </div>
       </>}
 
       {aba==='login' && <>
-        <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="E-mail" style={{width:'100%', padding:14, borderRadius:12, border:'1px solid #e5e7eb', background:'#EEF4FF', marginBottom:12}}/>
-        <input type="password" value={senha} onChange={e=>setSenha(e.target.value)} placeholder="Senha" style={{width:'100%', padding:14, borderRadius:12, border:'1px solid #e5e7eb', marginBottom:16}}/>
-        <button onClick={handleLogin} disabled={loading} style={{width:'100%', padding:16, borderRadius:16, background:'#00C896', color:'#fff', border:'none', fontWeight:700}}>{loading?'Carregando...':'Entrar'}</button>
+        <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="E-mail" style={{width:'100%', padding:14, borderRadius:12, border:'1px solid #e5e7eb', background:'#EEF4FF', marginBottom:12, boxSizing:'border-box'}}/>
+        <input type="password" value={senha} onChange={e=>setSenha(e.target.value)} placeholder="Senha" style={{width:'100%', padding:14, borderRadius:12, border:'1px solid #e5e7eb', marginBottom:16, boxSizing:'border-box'}}/>
+        <button onClick={handleLogin} disabled={loading} style={{width:'100%', padding:16, borderRadius:16, background:'#00C896', color:'#fff', border:'none', fontWeight:700, cursor:'pointer'}}>{loading?'Carregando...':'Entrar'}</button>
       </>}
     </div>
   )
