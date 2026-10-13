@@ -1,320 +1,167 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
+import React, { useState } from "react";
+import { initializeApp } from "firebase/app";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+import { getFirestore, doc, setDoc, serverTimestamp } from "firebase/firestore";
 
-import React, { useState, useEffect } from 'react';
-import { APIProvider } from '@vis.gl/react-google-maps';
-import { Header } from './components/Header';
-import { StoriesBar } from './components/StoriesBar';
-import { FeedView } from './components/FeedView';
-import { ChartsView } from './components/ChartsView';
-import { AdminPanel } from './components/AdminPanel';
-import { ProfileView } from './components/ProfileView';
-import { AiSofiaView } from './components/AiSofiaView';
-import {
-  INITIAL_BANK_CONFIG,
-  INITIAL_MEMBERS,
-  INITIAL_MESSAGES,
-  BOT_SIMULATED_REPLIES,
-  PRESET_LOCATIONS,
-} from './mockData';
-import { BankConfig, FeedMessage, Member, ReportCategory } from './types';
+// SEU FIREBASE alo-alo-vip
+const firebaseConfig = {
+  apiKey: "AIzaSyC2X3sfm5AdgXWsVxNCa_PvQKpjDyO1iWA",
+  authDomain: "alo-alo-vip.firebaseapp.com",
+  projectId: "alo-alo-vip",
+  storageBucket: "alo-alo-vip.firebasestorage.app",
+  messagingSenderId: "847804328447",
+  appId: "1:847804328447:web:a09aec19415fe16478dfca"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'AIzaSyDQSPAAH8h-_AUMKOMBXBz-1A4MA9uLmtg';
+const DDD_VALIDOS = ["11","12","13","14","15","16","17","18","19","21","22","24","27","28","31","32","33","34","35","37","38","41","42","43","44","45","46","47","48","49","51","53","54","55","61","62","63","64","65","66","67","68","69","71","73","74","75","77","79","81","82","83","84","85","86","87","88","89","91","92","93","94","95","96","97","98","99"];
 
 export default function App() {
-  const [currentTab, setCurrentTab] = useState<'feed' | 'charts' | 'admin' | 'sofia' | 'profile'>('feed');
-  const [isAdmMode, setIsAdmMode] = useState<boolean>(true); // Admin preview enabled initially so user can test both views immediately
-  const [themeMode, setThemeMode] = useState<'escuro' | 'alto-contraste'>(() => {
-    try {
-      const saved = localStorage.getItem('alo_vip_theme');
-      if (saved === 'alto-contraste' || saved === 'escuro') return saved;
-    } catch {
-      // fallback
+  const [nome, setNome] = useState(""); const [email, setEmail] = useState("");
+  const [telefone, setTelefone] = useState(""); const [senha, setSenha] = useState("");
+  const [confirmar, setConfirmar] = useState(""); const [showPass, setShowPass] = useState(false);
+  const [aceitoTermos, setAceitoTermos] = useState(false); const [aceitoContrato, setAceitoContrato] = useState(false);
+  const [salvarSenha, setSalvarSenha] = useState(true); const [modo, setModo] = useState<"criar"|"entrar">("criar");
+  const [erro, setErro] = useState(""); const [loading, setLoading] = useState(false);
+  const [pais, setPais] = useState("+55"); const [openPais, setOpenPais] = useState(false);
+  
+  const formatarTelefone = (v:string) => {
+    const nums = v.replace(/\D/g,"");
+    if(pais === "+55"){
+      if(nums.length <=2) return nums;
+      if(nums.length <=6) return `(${nums.slice(0,2)}) ${nums.slice(2)}`;
+      if(nums.length <=10) return `(${nums.slice(0,2)}) ${nums.slice(2,6)}-${nums.slice(6)}`;
+      return `(${nums.slice(0,2)}) ${nums.slice(2,7)}-${nums.slice(7,11)}`;
     }
-    return 'escuro';
-  });
-  const [members, setMembers] = useState<Member[]>(INITIAL_MEMBERS);
-  const [messages, setMessages] = useState<FeedMessage[]>(() => {
-    try {
-      const saved = localStorage.getItem('alo_vip_messages_feed');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
-      }
-    } catch {
-      // fallback
-    }
-    return INITIAL_MESSAGES;
-  });
-  const [bankConfig, setBankConfig] = useState<BankConfig>(INITIAL_BANK_CONFIG);
-  const [botAutoPosting, setBotAutoPosting] = useState<boolean>(true);
-  const [quotaExceeded, setQuotaExceeded] = useState<boolean>(false);
-
-  // Persist messages across reloads so photos/videos are kept in the feed
-  useEffect(() => {
-    try {
-      localStorage.setItem('alo_vip_messages_feed', JSON.stringify(messages));
-    } catch (e) {
-      try {
-        // Fallback: If quota exceeded due to heavy images/videos, store compact representations
-        const compact = messages.slice(0, 35).map((m) => ({
-          ...m,
-          mediaUrl: m.mediaUrl && m.mediaUrl.length > 300000 ? undefined : m.mediaUrl,
-        }));
-        localStorage.setItem('alo_vip_messages_feed', JSON.stringify(compact));
-      } catch (err2) {
-        console.warn('LocalStorage quota limit reached, maintaining in React state', err2);
-      }
-    }
-  }, [messages]);
-
-  // If user exits ADM mode and is on charts or admin tab, redirect to feed
-  useEffect(() => {
-    if (!isAdmMode && (currentTab === 'charts' || currentTab === 'admin')) {
-      setCurrentTab('feed');
-    }
-  }, [isAdmMode, currentTab]);
-
-  // Toggle theme between dark mode and high-contrast outdoor mode
-  const handleToggleTheme = (newMode?: 'escuro' | 'alto-contraste') => {
-    setThemeMode(prev => {
-      const next = newMode !== undefined ? newMode : (prev === 'escuro' ? 'alto-contraste' : 'escuro');
-      try {
-        localStorage.setItem('alo_vip_theme', next);
-      } catch {
-        // ignore
-      }
-      return next;
-    });
+    return nums;
+  };
+  const validarDDD = () => {
+    if(pais !== "+55") return true;
+    const ddd = telefone.replace(/\D/g,"").slice(0,2);
+    return DDD_VALIDOS.includes(ddd);
   };
 
-  // Listen for GMP demo key quota exceeded event
-  useEffect(() => {
-    const handleQuota = () => setQuotaExceeded(true);
-    window.addEventListener('gmp-quota-exceeded', handleQuota);
-    return () => window.removeEventListener('gmp-quota-exceeded', handleQuota);
-  }, []);
-
-  // Current logged in user is the admin / demo user
-  const currentUserId = 'user-admin';
-  const currentUser = members.find(m => m.id === currentUserId) || members[0];
-
-  const realMembersCount = members.filter(m => !m.isBot).length;
-  const botMembersCount = bankConfig.totalVagas - realMembersCount;
-
-  // Handle simulating a new login for a member (today: 11/10)
-  const handleSimulateLogin = (memberId: string) => {
-    setMembers(prev =>
-      prev.map(member => {
-        if (member.id === memberId) {
-          const stats = { ...member.stats };
-          const todayItem = stats.loginsByDate.find(d => d.day === 11);
-          if (todayItem) {
-            todayItem.count += 1;
-          }
-          stats.totalLogins += 1;
-          stats.engagementRate = Math.min(100, Math.round((stats.totalLogins / (11 * 3)) * 100));
-          return { ...member, stats };
-        }
-        return member;
-      })
-    );
+  const handleCriar = async () => {
+    setErro("");
+    if(!nome || !telefone || !email || !senha) { setErro("Preencha todos os campos"); return; }
+    if(pais === "+55" && !validarDDD()){ setErro("Insira DDD válido (ex: 11, 21, 31)"); return; }
+    if(senha !== confirmar){ setErro("Senhas não conferem"); return; }
+    if(!aceitoTermos || !aceitoContrato){ setErro("Aceite os termos"); return; }
+    setLoading(true);
+    try{
+      const cred = await createUserWithEmailAndPassword(auth, email, senha);
+      const hoje = new Date(); const venc = new Date(); venc.setDate(hoje.getDate()+30);
+      await setDoc(doc(db, "usuarios", cred.user.uid), {
+        nome, telefone: `${pais} ${telefone}`, email, dataEntrada: hoje.toISOString().split('T')[0],
+        dataVencimento: venc.toISOString().split('T')[0], criadoEm: serverTimestamp(), pais
+      });
+      alert("Conta criada! Agora você já aparece no Firebase!");
+      setModo("entrar");
+    }catch(e:any){ setErro(e.message); } finally{ setLoading(false); }
   };
-
-  // Handle new message / report sent by current user
-  const handleNewMessageSent = (category: ReportCategory) => {
-    setMembers(prev =>
-      prev.map(member => {
-        if (member.id === currentUserId) {
-          const stats = { ...member.stats };
-          const todayItem = stats.messagesByDate.find(d => d.day === 11);
-          if (todayItem) {
-            todayItem.count += 1;
-          }
-          stats.totalMessages += 1;
-
-          // Update category breakdown
-          const catItem = stats.categoryBreakdown.find(c => c.category === category);
-          if (catItem) {
-            catItem.count += 1;
-          }
-          // Recalculate percentages
-          const total = Math.max(1, stats.totalMessages);
-          stats.categoryBreakdown = stats.categoryBreakdown.map(c => ({
-            ...c,
-            percentage: Math.round((c.count / total) * 100),
-          }));
-          stats.goalCompletionRate = Math.min(100, Math.round((stats.totalMessages / 30) * 100));
-
-          return { ...member, stats };
-        }
-        return member;
-      })
-    );
-  };
-
-  // Function for admin to trigger an instant stealth bot message
-  const handleTriggerBotMessage = () => {
-    const randomReply = BOT_SIMULATED_REPLIES[Math.floor(Math.random() * BOT_SIMULATED_REPLIES.length)];
-    const stealthBots = [
-      { name: 'Patrulha #2290', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80', cat: 'transito' as const, label: 'Trânsito em Tempo Real' },
-      { name: 'Monitor #07', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80', cat: 'informacao' as const, label: 'Ronda Setorial' },
-      { name: 'Agente Silva', avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80', cat: 'ocorrencia' as const, label: 'Ocorrência Verificada' },
-    ];
-    const picked = stealthBots[Math.floor(Math.random() * stealthBots.length)];
-    const randomLoc = PRESET_LOCATIONS[Math.floor(Math.random() * PRESET_LOCATIONS.length)];
-
-    const botMsg: FeedMessage = {
-      id: `bot-msg-${Date.now()}`,
-      authorId: `bot-stealth-${Date.now()}`,
-      authorName: picked.name,
-      authorAvatar: picked.avatar,
-      isBot: true, // Only visible to ADM if in ADM view
-      timeAgo: 'agora mesmo',
-      timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-      type: 'text',
-      category: picked.cat,
-      categoryLabel: picked.label,
-      content: randomReply,
-      location: randomLoc,
-      aiAnalyzed: true,
-      aiClassification: 'Verificado por IA',
-    };
-
-    setMessages(prev => [botMsg, ...prev]);
-  };
-
-  // Update profile
-  const handleUpdateProfile = (updated: Partial<Member>) => {
-    setMembers(prev =>
-      prev.map(m => (m.id === currentUserId ? { ...m, ...updated } : m))
-    );
-  };
-
-  // When clicking "Gráficos" in admin member list, navigate directly to charts view
-  const handleInspectMemberCharts = (memberId: string) => {
-    setCurrentTab('charts');
+  const handleEntrar = async () => {
+    setErro(""); setLoading(true);
+    try{ await signInWithEmailAndPassword(auth, email, senha); alert("Entrou!"); }
+    catch(e:any){ setErro(e.message); } finally{ setLoading(false); }
   };
 
   return (
-    <APIProvider apiKey={API_KEY} libraries={['visualization']}>
-      <div
-        className={`min-h-screen ${
-          themeMode === 'alto-contraste'
-            ? 'high-contrast theme-root bg-slate-100 text-slate-950'
-            : 'bg-neutral-950 text-neutral-100'
-        } flex flex-col items-center transition-colors duration-200 w-full max-w-full overflow-x-hidden`}
-        style={{ overscrollBehaviorX: 'none' }}
-      >
-        {/* GMP Quota Defense Banner */}
-        {quotaExceeded && (
-          <div className="w-full bg-amber-500/10 border-b border-amber-500/30 text-amber-200 px-4 py-2 text-xs text-center sticky top-0 z-50 backdrop-blur">
-            <span>
-              Google Maps Platform quota reached. If you are the app owner, visit{' '}
-              <a
-                href="https://developers.google.com/maps/ai/ai-studio?utm_campaign=gmp_mcp_codeassist_v1_aistudio#quota_exceeded_errors"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline font-semibold text-amber-400 hover:text-amber-300"
-              >
-                maps developer site
-              </a>{' '}
-              for instructions to update your account.
-            </span>
+    <div style={{minHeight:"100vh", background:"#F9FBFA", fontFamily:"Inter, system-ui", display:"flex", justifyContent:"center", padding:"20px"}}>
+      <div style={{width:"100%", maxWidth:440}}>
+        {/* LOGO */}
+        <div style={{display:"flex", alignItems:"center", gap:12, marginBottom:28, marginTop:8}}>
+          <div style={{width:40, height:40, background:"#0EB87E", borderRadius:12, display:"flex", alignItems:"center", justifyContent:"center"}}>
+            <span style={{color:"white", fontWeight:700}}>📶</span>
           </div>
-        )}
-
-        {/* Top Banner Notice: ONLY visible to ADM */}
-        {isAdmMode && (
-          <div
-            className={`w-full ${
-              themeMode === 'alto-contraste'
-                ? 'bg-emerald-100 border-b-2 border-emerald-800 text-emerald-950 font-semibold'
-                : 'bg-emerald-950/40 border-b border-emerald-900/40 text-emerald-300'
-            } py-1.5 px-3 text-center text-[11px] transition-colors`}
-          >
-            <span className="font-bold">Privacidade VIP (ADM Ativo):</span> Membros reais nunca sabem que existem bots. Apenas você com a chave ADM visualiza os dados reais e gráficos.
+          <div>
+            <div style={{fontWeight:700, fontSize:16, color:"#121614"}}>Alô Alô</div>
+            <div style={{fontSize:10, letterSpacing:"0.2em", color:"#8AA098", textTransform:"uppercase"}}>Rede Local Premium</div>
           </div>
-        )}
+        </div>
 
-      {/* Main Container: Fixed centered, no horizontal movement */}
-      <div
-        className={`w-full max-w-lg sm:max-w-xl md:max-w-2xl min-h-screen ${
-          themeMode === 'alto-contraste'
-            ? 'theme-container bg-white border-x-2 border-slate-900'
-            : 'bg-neutral-950 border-x border-neutral-900/80'
-        } flex flex-col shadow-2xl relative transition-colors duration-200 mx-auto overflow-x-hidden`}
-      >
-        <Header
-          currentTab={currentTab}
-          setCurrentTab={setCurrentTab}
-          isAdmMode={isAdmMode}
-          setIsAdmMode={setIsAdmMode}
-          currentUserRole={currentUser.role}
-          realMembersCount={realMembersCount}
-          botMembersCount={botMembersCount}
-          totalCapacity={bankConfig.totalVagas}
-          onlineCount={876}
-          themeMode={themeMode}
-          onToggleTheme={() => handleToggleTheme()}
-        />
+        <div style={{background:"white", borderRadius:28, padding:28, boxShadow:"0 16px 40px rgba(17,24,20,0.06)", border:"1px solid #E8EDEA"}}>
+          <h1 style={{fontSize:26, fontWeight:700, color:"#121614", lineHeight:1.1, margin:0}}>Criar conta no<br/>Alô Alô</h1>
+          <p style={{color:"#6B7A75", fontSize:14, marginTop:8}}>Entre para ver o feed da sua cidade</p>
 
-        <main className="flex-1 p-3 sm:p-4 space-y-4 pb-20">
-          {currentTab === 'feed' && (
-            <>
-              <StoriesBar />
-              <FeedView
-                messages={messages}
-                setMessages={setMessages}
-                currentUser={currentUser}
-                isAdmMode={isAdmMode}
-                onNewMessageSent={handleNewMessageSent}
-              />
-            </>
-          )}
+          {erro && <div style={{background:"#FEECEC", border:"1px solid #E5484D", color:"#E5484D", padding:12, borderRadius:12, marginTop:16, fontSize:13}}>{erro}</div>}
 
-          {currentTab === 'charts' && (
-            <ChartsView
-              members={members}
-              currentUserId={currentUserId}
-              isAdmMode={isAdmMode}
-              onSimulateLogin={handleSimulateLogin}
-            />
-          )}
+          <div style={{marginTop:20, display:"flex", flexDirection:"column", gap:14}}>
+            <div>
+              <label style={{fontSize:12, fontWeight:600, color:"#121614"}}>Nome completo</label>
+              <input value={nome} onChange={e=>setNome(e.target.value)} placeholder="Ex: João Silva" style={{width:"100%", height:52, background:"#F8F9F8", border:"1px solid #E8EDEA", borderRadius:14, padding:"0 16px", marginTop:6, outline:"none"}}/>
+            </div>
 
-          {currentTab === 'admin' && (
-            <AdminPanel
-              members={members}
-              setMembers={setMembers}
-              bankConfig={bankConfig}
-              setBankConfig={setBankConfig}
-              botAutoPosting={botAutoPosting}
-              setBotAutoPosting={setBotAutoPosting}
-              themeMode={themeMode}
-              onToggleTheme={(m) => handleToggleTheme(m)}
-              onTriggerBotMessage={handleTriggerBotMessage}
-              onInspectMemberCharts={handleInspectMemberCharts}
-            />
-          )}
+            <div>
+              <label style={{fontSize:12, fontWeight:600, color:"#121614"}}>Telefone</label>
+              <div style={{display:"flex", gap:8, marginTop:6}}>
+                <div style={{position:"relative"}}>
+                  <button onClick={()=>setOpenPais(!openPais)} style={{height:52, minWidth:92, background:"#F8F9F8", border:"1px solid #E8EDEA", borderRadius:14, padding:"0 12px", fontWeight:600}}>{pais} ▼</button>
+                  {openPais && <div style={{position:"absolute", top:56, left:0, background:"white", border:"1px solid #E8EDEA", borderRadius:12, zIndex:20, width:140}}>
+                    {["+55","+1","+351","+54","+56","+57","+51","+598","+595"].map(p=><div key={p} onClick={()=>{setPais(p); setOpenPais(false);}} style={{padding:"10px 12px", cursor:"pointer", borderBottom:"1px solid #F3F6F4"}}>{p}</div>)}
+                  </div>}
+                </div>
+                <input value={telefone} onChange={e=>setTelefone(formatarTelefone(e.target.value))} placeholder="(00) 00000-0000" style={{flex:1, height:52, background:"#F8F9F8", border:`1px solid ${pais==="+55" && telefone && !validarDDD() ? "#E5484D" : "#E8EDEA"}`, borderRadius:14, padding:"0 16px", outline:"none"}}/>
+              </div>
+              <div style={{fontSize:11, color: validarDDD() ? "#0EB87E" : "#E5484D", marginTop:4}}>Insira DDD válido (ex: 11, 21, 31)</div>
+            </div>
 
-          {currentTab === 'sofia' && <AiSofiaView />}
+            <div>
+              <label style={{fontSize:12, fontWeight:600, color:"#121614"}}>E-mail</label>
+              <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="seu@email.com" style={{width:"100%", height:52, background:"#F8F9F8", border:"1px solid #E8EDEA", borderRadius:14, padding:"0 16px", marginTop:6, outline:"none"}}/>
+            </div>
 
-          {currentTab === 'profile' && (
-            <ProfileView
-              currentUser={currentUser}
-              bankConfig={bankConfig}
-              themeMode={themeMode}
-              onToggleTheme={(m) => handleToggleTheme(m)}
-              onUpdateProfile={handleUpdateProfile}
-            />
-          )}
-        </main>
+            <div>
+              <label style={{fontSize:12, fontWeight:600, color:"#121614"}}>Senha</label>
+              <div style={{position:"relative", marginTop:6}}>
+                <input type={showPass?"text":"password"} value={senha} onChange={e=>setSenha(e.target.value)} placeholder="Mín. 6 caracteres" style={{width:"100%", height:52, background:"#F8F9F8", border:"1px solid #E8EDEA", borderRadius:14, padding:"0 40px 0 16px", outline:"none"}}/>
+                <button onClick={()=>setShowPass(!showPass)} style={{position:"absolute", right:12, top:16}}>👁️</button>
+              </div>
+            </div>
+
+            {modo==="criar" && <div>
+              <label style={{fontSize:12, fontWeight:600, color:"#121614"}}>Confirmar senha</label>
+              <input type="password" value={confirmar} onChange={e=>setConfirmar(e.target.value)} placeholder="Repita a senha" style={{width:"100%", height:52, background:"#F8F9F8", border:"1px solid #E8EDEA", borderRadius:14, padding:"0 16px", marginTop:6, outline:"none"}}/>
+            </div>}
+
+            <div style={{display:"flex", gap:8, marginTop:8}}>
+              <input type="checkbox" checked={aceitoTermos} onChange={e=>setAceitoTermos(e.target.checked)}/>
+              <span style={{fontSize:12, color:"#3A4A45"}}>Eu concordo com os <u style={{color:"#0EB87E"}}>Termos de Uso</u></span>
+            </div>
+            <div style={{display:"flex", gap:8}}>
+              <input type="checkbox" checked={aceitoContrato} onChange={e=>setAceitoContrato(e.target.checked)}/>
+              <span style={{fontSize:12, color:"#3A4A45"}}>Li e aceito o <u style={{color:"#0EB87E"}}>Contrato de Prestação</u></span>
+            </div>
+
+            <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", background:"#F3F6F4", borderRadius:12, padding:"12px 14px", marginTop:4}}>
+              <span style={{fontSize:13, fontWeight:500}}>Salvar senha</span>
+              <button onClick={()=>setSalvarSenha(!salvarSenha)} style={{width:40, height:24, borderRadius:999, background: salvarSenha ? "#0EB87E" : "#DDE5E1", position:"relative", border:"none", transition:"0.2s"}}>
+                <div style={{width:20, height:20, borderRadius:999, background:"white", position:"absolute", top:2, left: salvarSenha ? 18 : 2, transition:"0.2s"}}/>
+              </button>
+            </div>
+
+            <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginTop:4}}>
+              <div style={{background:"#F9FBFA", border:"1px solid #EEF2EF", borderRadius:12, padding:12}}>
+                <div style={{fontSize:10, color:"#8AA098", textTransform:"uppercase"}}>Data de entrada</div>
+                <div style={{fontSize:13, fontWeight:600}}>Hoje<br/>08/10/2026</div>
+              </div>
+              <div style={{background:"#E6F8F1", border:"1px solid #B7E8D5", borderRadius:12, padding:12}}>
+                <div style={{fontSize:10, color:"#3A6B57", textTransform:"uppercase"}}>Vencimento • 30 dias</div>
+                <div style={{fontSize:13, fontWeight:600, color:"#0B6B4A"}}>07/11/2026</div>
+              </div>
+            </div>
+
+            <button onClick={modo==="criar"?handleCriar:handleEntrar} disabled={loading} style={{width:"100%", height:52, background:"#0EB87E", color:"white", border:"none", borderRadius:14, fontWeight:700, fontSize:15, marginTop:6, cursor:"pointer"}}>
+              {loading ? "Carregando..." : modo==="criar" ? "Criar conta" : "Entrar"}
+            </button>
+
+            <div style={{textAlign:"center", fontSize:13, color:"#6B7A75", marginTop:4}}>
+              {modo==="criar" ? "Já possui uma conta?" : "Não tem conta?"} <span onClick={()=>setModo(modo==="criar"?"entrar":"criar")} style={{color:"#0EB87E", fontWeight:600, cursor:"pointer", textDecoration:"underline"}}>{modo==="criar"?"Entrar":"Criar conta"}</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-  </APIProvider>
-);
+  );
 }
